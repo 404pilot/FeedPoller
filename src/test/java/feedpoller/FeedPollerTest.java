@@ -2,6 +2,7 @@ package feedpoller;
 
 import com.sun.jersey.api.client.Client;
 import feedpoller.domain.EndpointConfig;
+import feedpoller.domain.PollingResult;
 import feedpoller.handler.DefaultPollingExceptionHandler;
 import feedpoller.handler.NewFeedHandler;
 import feedpoller.handler.PollingExceptionHandler;
@@ -9,25 +10,28 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.omg.CORBA.TIMEOUT;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.internal.util.reflection.Whitebox.getInternalState;
+import static org.powermock.api.mockito.PowerMockito.*;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(FeedPoller.class)
@@ -64,57 +68,46 @@ public class FeedPollerTest {
     @Mock
     ScheduledExecutorService mockedScheduledExecutorService;
 
-
     List<EndpointConfig> endpointConfigs;
 
+    FeedPoller.FeedPollerBuilder builder;
 
     FeedPoller feedPoller;
 
     @Before
     public void setUp() throws Exception {
         initMocks(this);
-        //PowerMockito.spy(Executors.class);
+        mockStatic(Executors.class);
+        when(Executors.newScheduledThreadPool(anyInt())).thenReturn(mockedScheduledExecutorService);
 
-        endpointConfigs = new ArrayList<EndpointConfig>() {
-            {
-                add(new EndpointConfig(
-                        FOO_KEY,
-                        FOO_INITIAL_URI,
-                        FOO_PERIOD
-                ));
-                add(new EndpointConfig(
-                        BAR_KEY,
-                        BAR_INITIAL_URI,
-                        BAR_PERIOD
-                ));
-            }
-        };
+        endpointConfigs = new ArrayList<EndpointConfig>() {{
+            add(new EndpointConfig(FOO_KEY, FOO_INITIAL_URI, FOO_PERIOD));
+            add(new EndpointConfig(BAR_KEY, BAR_INITIAL_URI, BAR_PERIOD));
+        }};
 
-        feedPoller = new FeedPoller.FeedPollerBuilder()
+        builder = new FeedPoller.FeedPollerBuilder()
                 .withClient(mockedClient)
                 .withEndpointConfigs(endpointConfigs)
                 .withNewFeedHandler(mockedNewFeedHandler)
                 .withInitialDelay(INITIAL_DELAY)
                 .withPollingExceptionHandler(mockedPollingExceptionHandler)
-                .withShutdownTimeout(SHUT_DOWN_TIMEOUT)
-                .build();
+                .withShutdownTimeout(SHUT_DOWN_TIMEOUT);
 
-        setPrivateField(feedPoller, FILED_SERVICE, mockedScheduledExecutorService);
+        feedPoller = builder.build();
     }
 
+    // ************************************************************************
+    // ****************************** Builder *********************************
+    // ************************************************************************
     @Test
     public void builder_creates_correctFeedPoller() throws Exception {
-        Client client = (Client) getPrivateField(feedPoller, FIELD_CLIENT);
+        Client client = (Client) getInternalState(feedPoller, FIELD_CLIENT);
 
-        List<EndpointConfig> endpointConfigs = (List<EndpointConfig>) getPrivateField(feedPoller, FILED_ENDPOINT_CONFIGS);
-
-        NewFeedHandler newFeedHandler = (NewFeedHandler) getPrivateField(feedPoller, FILED_NEW_FEED_HANDLER);
-
-        long initialDelay = (long) getPrivateField(feedPoller, FILED_INITIAL_DELAY);
-
-        long shutdownTimeout = (long) getPrivateField(feedPoller, FILED_SHUTDOWN_TIMEOUT);
-
-        PollingExceptionHandler pollingExceptionHandler = (PollingExceptionHandler) getPrivateField(feedPoller, FILED_POLLING_EXCEPTION_HANDLER);
+        List<EndpointConfig> endpointConfigs = (List<EndpointConfig>) getInternalState(feedPoller, FILED_ENDPOINT_CONFIGS);
+        NewFeedHandler newFeedHandler = (NewFeedHandler) getInternalState(feedPoller, FILED_NEW_FEED_HANDLER);
+        long initialDelay = (long) getInternalState(feedPoller, FILED_INITIAL_DELAY);
+        long shutdownTimeout = (long) getInternalState(feedPoller, FILED_SHUTDOWN_TIMEOUT);
+        PollingExceptionHandler pollingExceptionHandler = (PollingExceptionHandler) getInternalState(feedPoller, FILED_POLLING_EXCEPTION_HANDLER);
 
         assertThat("client:", client, equalTo(mockedClient));
         assertThat("endpointConfigs:", endpointConfigs, equalTo(endpointConfigs));
@@ -134,7 +127,7 @@ public class FeedPollerTest {
                 .withShutdownTimeout(SHUT_DOWN_TIMEOUT)
                 .build();
 
-        Client client = (Client) getPrivateField(feedPoller, FIELD_CLIENT);
+        Client client = (Client) getInternalState(feedPoller, FIELD_CLIENT);
 
         assertThat("client is default", client, instanceOf(Client.class));
     }
@@ -172,7 +165,7 @@ public class FeedPollerTest {
                 .withShutdownTimeout(SHUT_DOWN_TIMEOUT)
                 .build();
 
-        PollingExceptionHandler pollingExceptionHandler = (PollingExceptionHandler) getPrivateField(feedPoller, FILED_POLLING_EXCEPTION_HANDLER);
+        PollingExceptionHandler pollingExceptionHandler = (PollingExceptionHandler) getInternalState(feedPoller, FILED_POLLING_EXCEPTION_HANDLER);
 
         assertThat("pollingExceptionHandler is default", pollingExceptionHandler, instanceOf(DefaultPollingExceptionHandler.class));
     }
@@ -186,7 +179,7 @@ public class FeedPollerTest {
                 .withShutdownTimeout(SHUT_DOWN_TIMEOUT)
                 .build();
 
-        long initialDelay = (long) getPrivateField(feedPoller, FILED_INITIAL_DELAY);
+        long initialDelay = (long) getInternalState(feedPoller, FILED_INITIAL_DELAY);
 
         assertThat("pollingExceptionHandler is default", initialDelay, equalTo(0L));
     }
@@ -200,63 +193,35 @@ public class FeedPollerTest {
                 .withInitialDelay(INITIAL_DELAY)
                 .build();
 
-        long shutdownTimeout = (long) getPrivateField(feedPoller, FILED_SHUTDOWN_TIMEOUT);
+        long shutdownTimeout = (long) getInternalState(feedPoller, FILED_SHUTDOWN_TIMEOUT);
 
         assertThat("pollingExceptionHandler is default", shutdownTimeout, equalTo(60000L));
     }
 
-    // newScheduledThreadPool size to
-
-
-    @Test
-    public void executors_creates_threadPoll() throws Exception {
-        FeedPoller anotherFeedPoller = new FeedPoller.FeedPollerBuilder()
-                .withClient(mockedClient)
-                .withEndpointConfigs(endpointConfigs)
-                .withNewFeedHandler(mockedNewFeedHandler)
-                .withInitialDelay(INITIAL_DELAY)
-                .withPollingExceptionHandler(mockedPollingExceptionHandler)
-                .withShutdownTimeout(SHUT_DOWN_TIMEOUT)
-                .build();
-
-        ScheduledThreadPoolExecutor service = (ScheduledThreadPoolExecutor) getPrivateField(anotherFeedPoller, FILED_SERVICE);
-
-        int poolSize = service.getCorePoolSize();
-
-        assertThat("initial core poll size is", poolSize, equalTo(endpointConfigs.size()));
-
-    }
+    // ************************************************************************
+    // ****************************** FeedPoller ******************************
+    // ************************************************************************
 
     @Test
-    public void scheduledThreadPoll_isCreated() throws Exception {
-        FeedPoller anotherFeedPoller = new FeedPoller.FeedPollerBuilder()
-                .withClient(mockedClient)
-                .withEndpointConfigs(endpointConfigs)
-                .withNewFeedHandler(mockedNewFeedHandler)
-                .withInitialDelay(INITIAL_DELAY)
-                .withPollingExceptionHandler(mockedPollingExceptionHandler)
-                .withShutdownTimeout(SHUT_DOWN_TIMEOUT)
-                .build();
-
-        ScheduledExecutorService service = (ScheduledExecutorService) getPrivateField(anotherFeedPoller, "service");
-
-        assertThat("scheduled", service, instanceOf(ScheduledExecutorService.class));
+    public void executors_creates_scheduledThreadPoll() throws Exception {
+        verifyStatic(times(1));
+        Executors.newScheduledThreadPool(endpointConfigs.size());
     }
 
     @Test
     public void start_createsTasks() throws Exception {
         feedPoller.start();
 
-        List<PollingTask> tasks = (List<PollingTask>) getPrivateField(feedPoller, FILED_TASKS);
+        List<PollingTask> tasks = (List<PollingTask>) getInternalState(feedPoller, FILED_TASKS);
 
         assertThat("size is 2", tasks.size(), equalTo(2));
 
         ArrayList<EndpointConfig> copy = new ArrayList<EndpointConfig>(this.endpointConfigs);
 
         for (PollingTask task : tasks) {
-            assertThat("client is the same", ((Client) getPrivateField(task, "client")), equalTo(mockedClient));
-            assertThat("newFeedHandler is the same", ((NewFeedHandler) getPrivateField(task, "newFeedHandler")), equalTo(mockedNewFeedHandler));
-            assertThat("pollingExceptionHandler is the same", ((PollingExceptionHandler) getPrivateField(task, "pollingExceptionHandler")), equalTo(mockedPollingExceptionHandler));
+            assertThat("client is the same", ((Client) getInternalState(task, "client")), equalTo(mockedClient));
+            assertThat("newFeedHandler is the same", ((NewFeedHandler) getInternalState(task, "newFeedHandler")), equalTo(mockedNewFeedHandler));
+            assertThat("pollingExceptionHandler is the same", ((PollingExceptionHandler) getInternalState(task, "pollingExceptionHandler")), equalTo(mockedPollingExceptionHandler));
 
             if (task.getKey().equals(FOO_KEY)) {
                 assertThat("initial uri is the same", task.getInitialUri(), equalTo(FOO_INITIAL_URI));
@@ -277,28 +242,80 @@ public class FeedPollerTest {
         verify(mockedScheduledExecutorService, times(1)).scheduleAtFixedRate(any(PollingTask.class), eq(INITIAL_DELAY), eq(BAR_PERIOD), eq(TimeUnit.MILLISECONDS));
     }
 
-    private Object getPrivateField(Object instance, String fieldName) {
-        try {
-            Field declaredField = instance.getClass().getDeclaredField(fieldName);
-            declaredField.setAccessible(true);
-            return declaredField.get(instance);
-        } catch (NoSuchFieldException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        }
-        return null;
+    @Test
+    public void shutdown_callsShutdown() throws Exception {
+        feedPoller.shutdown();
+
+        verify(mockedScheduledExecutorService, times(1)).shutdown();
     }
 
-    private void setPrivateField(Object instance, String fieldName, Object assignedObj) {
-        try {
-            Field declaredField = instance.getClass().getDeclaredField(fieldName);
-            declaredField.setAccessible(true);
-            declaredField.set(instance, assignedObj);
-        } catch (NoSuchFieldException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
+    @Test
+    public void shutdown_awaitTermination() throws Exception {
+        feedPoller.shutdown();
+
+        verify(mockedScheduledExecutorService).awaitTermination(SHUT_DOWN_TIMEOUT, TimeUnit.MILLISECONDS);
+    }
+
+    @Test
+    public void shutdown_forceSystemToShutdown_ifTimeIsExceeded() throws Exception {
+        given(mockedScheduledExecutorService.awaitTermination(SHUT_DOWN_TIMEOUT, TimeUnit.MILLISECONDS)).willReturn(false);
+
+        feedPoller.shutdown();
+
+        then(mockedScheduledExecutorService).should(times(1)).shutdownNow();
+    }
+
+    @Test
+    public void shutdown_forceSystemToShutdown_awaitTermination() throws Exception {
+        given(mockedScheduledExecutorService.awaitTermination(SHUT_DOWN_TIMEOUT, TimeUnit.MILLISECONDS)).willReturn(false);
+
+        feedPoller.shutdown();
+
+        then(mockedScheduledExecutorService).should(times(1)).awaitTermination(1, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void shutdown_forceSystemToShutdown_ifInterruptedExceptionIsThrown() throws Exception {
+        given(mockedScheduledExecutorService.awaitTermination(SHUT_DOWN_TIMEOUT, TimeUnit.MILLISECONDS)).willThrow(new InterruptedException());
+
+        feedPoller.shutdown();
+
+        then(mockedScheduledExecutorService).should(times(1)).shutdownNow();
+    }
+
+    @Test
+    public void shutdown_preserveInterruptStatus_ifInterruptedExceptionIsThrown() throws Exception {
+        mockStatic(Thread.class);
+        Thread mockedThread = mock(Thread.class);
+
+        given(mockedScheduledExecutorService.awaitTermination(SHUT_DOWN_TIMEOUT, TimeUnit.MILLISECONDS)).willThrow(new InterruptedException());
+        given(Thread.currentThread()).willReturn(mockedThread);
+
+        feedPoller.shutdown();
+
+        verifyStatic(times(1));
+        Thread.currentThread();
+
+        then(mockedThread).should(times(1)).interrupt();
+    }
+
+    @Test
+    public void shutdown_returnsPollingResult() throws Exception {
+        feedPoller.start();
+
+        List<PollingResult> results = feedPoller.shutdown();
+
+        assertThat("size: ", results.size(), equalTo(endpointConfigs.size()));
+
+        for (PollingResult result : results) {
+            if (result.getKey().equals(FOO_KEY)) {
+                assertThat("initial uri is the same", result.getFirstStartedUri(), equalTo(FOO_INITIAL_URI));
+
+            } else if (result.getKey().equals(BAR_KEY)) {
+                assertThat("initial uri is the same", result.getFirstStartedUri(), equalTo(BAR_INITIAL_URI));
+            } else {
+                fail("impossible to reach here");
+            }
         }
     }
 }

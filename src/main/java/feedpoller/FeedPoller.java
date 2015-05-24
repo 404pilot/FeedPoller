@@ -50,9 +50,9 @@ public class FeedPoller {
         }
     }
 
-    public List<PollingResult> shutdownAndAwaitTermination() {
+    public List<PollingResult> shutdown() {
         List<PollingResult> results = new ArrayList<>();
-        LOG.info("FeedPoller is stated to gracefully shutting down all tasks. (timeout {} milliseconds)", shutdownTimeout);
+        LOG.info("FeedPoller is stated to gracefully shut down all tasks. (timeout {} milliseconds)", shutdownTimeout);
         service.shutdown();
 
         try {
@@ -60,7 +60,7 @@ public class FeedPoller {
                 LOG.warn("FeedPoller is forced to shutdown.");
                 service.shutdownNow();
 
-                if (!service.awaitTermination(1, TimeUnit.SECONDS)) {
+                if (!service.awaitTermination(10, TimeUnit.SECONDS)) {
                     LOG.warn("FeedPoller is not able to terminate.");
                 }
             }
