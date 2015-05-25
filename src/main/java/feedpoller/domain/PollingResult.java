@@ -7,6 +7,8 @@ import lombok.Getter;
 @Getter
 public class PollingResult {
     private String key;
-    private String lastUnreadUri;
     private String firstStartedUri;
+    private String lastUnreadUri;
+
+    // equals and hashcode
 }

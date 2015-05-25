@@ -44,7 +44,7 @@ public class PollingTask implements Runnable {
         try {
             poll();
         } catch (Exception e) {
-            LOG.error("Poller [{}] get unexpected exception. The feed {} will be read again next time.\n{}", key, nextUri, e);
+            LOG.error("Poller [{}] get unexpected exception. The feed {} will be read again next time.", key, nextUri, e);
             pollingExceptionHandler.handle(e);
         }
     }

@@ -60,7 +60,7 @@ public class FeedPoller {
                 LOG.warn("FeedPoller is forced to shutdown.");
                 service.shutdownNow();
 
-                if (!service.awaitTermination(10, TimeUnit.SECONDS)) {
+                if (!service.awaitTermination(60, TimeUnit.SECONDS)) {
                     LOG.warn("FeedPoller is not able to terminate.");
                 }
             }

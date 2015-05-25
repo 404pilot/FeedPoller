@@ -10,7 +10,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.omg.CORBA.TIMEOUT;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -22,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.BDDMockito.given;
@@ -31,6 +31,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.MockitoAnnotations.initMocks;
 import static org.mockito.internal.util.reflection.Whitebox.getInternalState;
+import static org.mockito.internal.util.reflection.Whitebox.setInternalState;
 import static org.powermock.api.mockito.PowerMockito.*;
 
 @RunWith(PowerMockRunner.class)
@@ -271,7 +272,7 @@ public class FeedPollerTest {
 
         feedPoller.shutdown();
 
-        then(mockedScheduledExecutorService).should(times(1)).awaitTermination(1, TimeUnit.SECONDS);
+        then(mockedScheduledExecutorService).should(times(1)).awaitTermination(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -301,7 +302,13 @@ public class FeedPollerTest {
 
     @Test
     public void shutdown_returnsPollingResult() throws Exception {
+        String nextUri = "next uri";
         feedPoller.start();
+
+        List<PollingTask> tasks = (List<PollingTask>) getInternalState(feedPoller, FILED_TASKS);
+        for (PollingTask task : tasks) {
+            setInternalState(task, "nextUri", nextUri);
+        }
 
         List<PollingResult> results = feedPoller.shutdown();
 
@@ -316,6 +323,7 @@ public class FeedPollerTest {
             } else {
                 fail("impossible to reach here");
             }
+            assertThat("last unread uri:", result.getLastUnreadUri(), equalTo(nextUri));
         }
     }
 }
