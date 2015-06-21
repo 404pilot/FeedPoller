@@ -1,4 +1,4 @@
-package feedpoller;
+package feedpoller.stub;
 
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
@@ -14,6 +14,7 @@ public class SimpleServer {
     public void start() throws Exception {
         server.start();
 
+        // TODO why commented
         //long timeout = System.currentTimeMillis() + 5000;
         //
         //while (System.currentTimeMillis() < timeout) {

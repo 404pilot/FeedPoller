@@ -1,4 +1,4 @@
-package feedpoller;
+package feedpoller.stub;
 
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
