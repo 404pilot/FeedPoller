@@ -13,18 +13,17 @@ public class SimpleServer {
 
     public void start() throws Exception {
         server.start();
+        
+        long start = System.currentTimeMillis();
 
-        // TODO why commented
-        //long timeout = System.currentTimeMillis() + 5000;
-        //
-        //while (System.currentTimeMillis() < timeout) {
-        //    if (server.isStarted())
-        //        break;
-        //
-        //    TimeUnit.MILLISECONDS.sleep(100);
-        //}
+        while (!server.isStarted()) {
+            long current = System.currentTimeMillis();
+            if (current - start > 2000) {
+                throw new Error("Jetty is not started in 2 seconds");
+            }
+        }
 
-        System.out.println(server.isStarted() ? "Jetty server started!" : "**** Server failed to start! *****");
+        System.out.println("Jetty server started!");
     }
 
     public void stop() throws Exception {
