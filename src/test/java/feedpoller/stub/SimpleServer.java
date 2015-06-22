@@ -13,7 +13,7 @@ public class SimpleServer {
 
     public void start() throws Exception {
         server.start();
-        
+
         long start = System.currentTimeMillis();
 
         while (!server.isStarted()) {

@@ -69,6 +69,7 @@ public class SimpleHandler extends AbstractHandler {
     class ResponseClass {
         public String responseAsString;
         public int responseCode;
+
         public ResponseClass(final String responseAsString, final int responseCode) {
             this.responseAsString = responseAsString;
             this.responseCode = responseCode;
