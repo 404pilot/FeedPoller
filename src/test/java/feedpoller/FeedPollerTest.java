@@ -13,6 +13,7 @@ import org.mockito.Mock;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import javax.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -37,16 +38,18 @@ import static org.powermock.api.mockito.PowerMockito.*;
 @PrepareForTest(FeedPoller.class)
 public class FeedPollerTest {
     public static final String FIELD_CLIENT = "client";
-    public static final String FILED_ENDPOINT_CONFIGS = "endpointConfigs";
-    public static final String FILED_NEW_FEED_HANDLER = "newFeedHandler";
-    public static final String FILED_INITIAL_DELAY = "initialDelay";
-    public static final String FILED_SHUTDOWN_TIMEOUT = "shutdownTimeout";
-    public static final String FILED_POLLING_EXCEPTION_HANDLER = "pollingExceptionHandler";
-    public static final String FILED_SERVICE = "service";
+    public static final String FIELD_ENDPOINT_CONFIGS = "endpointConfigs";
+    public static final String FIELD_NEW_FEED_HANDLER = "newFeedHandler";
+    public static final String FIELD_INITIAL_DELAY = "initialDelay";
+    public static final String FIELD_SHUTDOWN_TIMEOUT = "shutdownTimeout";
+    public static final String FIELD_POLLING_EXCEPTION_HANDLER = "pollingExceptionHandler";
+    public static final String FIELD_CONTENT_TYPE = "contentType";
     public static final String FILED_TASKS = "tasks";
 
     private static final long INITIAL_DELAY = 10000L; // don't run tasks in unit test
     private static final long SHUT_DOWN_TIMEOUT = 1L;
+    private static final String CONTENT_TYPE = MediaType.APPLICATION_JSON;
+
 
     private static final String FOO_KEY = "foo";
     private static final String FOO_INITIAL_URI = "http://www.foo.com/1";
@@ -91,6 +94,7 @@ public class FeedPollerTest {
                 .withNewFeedHandler(mockedNewFeedHandler)
                 .withInitialDelay(INITIAL_DELAY)
                 .withPollingExceptionHandler(mockedPollingExceptionHandler)
+                .withContentType(CONTENT_TYPE)
                 .withShutdownTimeout(SHUT_DOWN_TIMEOUT);
 
         feedPoller = builder.build();
@@ -103,11 +107,12 @@ public class FeedPollerTest {
     public void builder_creates_correctFeedPoller() throws Exception {
         Client client = (Client) getInternalState(feedPoller, FIELD_CLIENT);
 
-        List<EndpointConfig> endpointConfigs = (List<EndpointConfig>) getInternalState(feedPoller, FILED_ENDPOINT_CONFIGS);
-        NewFeedHandler newFeedHandler = (NewFeedHandler) getInternalState(feedPoller, FILED_NEW_FEED_HANDLER);
-        long initialDelay = (long) getInternalState(feedPoller, FILED_INITIAL_DELAY);
-        long shutdownTimeout = (long) getInternalState(feedPoller, FILED_SHUTDOWN_TIMEOUT);
-        PollingExceptionHandler pollingExceptionHandler = (PollingExceptionHandler) getInternalState(feedPoller, FILED_POLLING_EXCEPTION_HANDLER);
+        List<EndpointConfig> endpointConfigs = (List<EndpointConfig>) getInternalState(feedPoller, FIELD_ENDPOINT_CONFIGS);
+        NewFeedHandler newFeedHandler = (NewFeedHandler) getInternalState(feedPoller, FIELD_NEW_FEED_HANDLER);
+        long initialDelay = (long) getInternalState(feedPoller, FIELD_INITIAL_DELAY);
+        long shutdownTimeout = (long) getInternalState(feedPoller, FIELD_SHUTDOWN_TIMEOUT);
+        PollingExceptionHandler pollingExceptionHandler = (PollingExceptionHandler) getInternalState(feedPoller, FIELD_POLLING_EXCEPTION_HANDLER);
+        String contentType = (String) getInternalState(feedPoller, FIELD_CONTENT_TYPE);
 
         assertThat("client:", client, equalTo(mockedClient));
         assertThat("endpointConfigs:", endpointConfigs, equalTo(endpointConfigs));
@@ -115,6 +120,7 @@ public class FeedPollerTest {
         assertThat("initialDelay:", initialDelay, equalTo(INITIAL_DELAY));
         assertThat("shutdownTimeout:", shutdownTimeout, equalTo(SHUT_DOWN_TIMEOUT));
         assertThat("pollingExceptionHandler:", pollingExceptionHandler, equalTo(mockedPollingExceptionHandler));
+        assertThat("contentType:", contentType, equalTo(CONTENT_TYPE));
     }
 
     @Test
@@ -165,7 +171,7 @@ public class FeedPollerTest {
                 .withShutdownTimeout(SHUT_DOWN_TIMEOUT)
                 .build();
 
-        PollingExceptionHandler pollingExceptionHandler = (PollingExceptionHandler) getInternalState(feedPoller, FILED_POLLING_EXCEPTION_HANDLER);
+        PollingExceptionHandler pollingExceptionHandler = (PollingExceptionHandler) getInternalState(feedPoller, FIELD_POLLING_EXCEPTION_HANDLER);
 
         assertThat("pollingExceptionHandler is default", pollingExceptionHandler, instanceOf(DefaultPollingExceptionHandler.class));
     }
@@ -179,7 +185,7 @@ public class FeedPollerTest {
                 .withShutdownTimeout(SHUT_DOWN_TIMEOUT)
                 .build();
 
-        long initialDelay = (long) getInternalState(feedPoller, FILED_INITIAL_DELAY);
+        long initialDelay = (long) getInternalState(feedPoller, FIELD_INITIAL_DELAY);
 
         assertThat("pollingExceptionHandler is default", initialDelay, equalTo(0L));
     }
@@ -193,9 +199,26 @@ public class FeedPollerTest {
                 .withInitialDelay(INITIAL_DELAY)
                 .build();
 
-        long shutdownTimeout = (long) getInternalState(feedPoller, FILED_SHUTDOWN_TIMEOUT);
+        long shutdownTimeout = (long) getInternalState(feedPoller, FIELD_SHUTDOWN_TIMEOUT);
 
         assertThat("pollingExceptionHandler is default", shutdownTimeout, equalTo(60000L));
+    }
+
+    @Test
+    public void builder_useTextContentType_ifContentTypeIsNotSpecified() throws Exception {
+        feedPoller = new FeedPoller.FeedPollerBuilder()
+                .withClient(mockedClient)
+                .withEndpointConfigs(endpointConfigs)
+                .withNewFeedHandler(mockedNewFeedHandler)
+                .withInitialDelay(INITIAL_DELAY)
+                .withPollingExceptionHandler(mockedPollingExceptionHandler)
+                .withShutdownTimeout(SHUT_DOWN_TIMEOUT)
+                .build();
+
+
+        String contentType = (String) getInternalState(feedPoller, FIELD_CONTENT_TYPE);
+
+        assertThat("contentType is default", contentType, equalTo(MediaType.TEXT_PLAIN));
     }
 
     // ************************************************************************
@@ -222,6 +245,7 @@ public class FeedPollerTest {
             assertThat("client is the same", ((Client) getInternalState(task, "client")), equalTo(mockedClient));
             assertThat("newFeedHandler is the same", ((NewFeedHandler) getInternalState(task, "newFeedHandler")), equalTo(mockedNewFeedHandler));
             assertThat("pollingExceptionHandler is the same", ((PollingExceptionHandler) getInternalState(task, "pollingExceptionHandler")), equalTo(mockedPollingExceptionHandler));
+            assertThat("contentType is expected", ((String) getInternalState(task, "contentType")), equalTo(CONTENT_TYPE));
 
             if (task.getKey().equals(FOO_KEY)) {
                 assertThat("initial uri is the same", task.getInitialUri(), equalTo(FOO_INITIAL_URI));

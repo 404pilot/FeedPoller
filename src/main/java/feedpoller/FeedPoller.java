@@ -9,6 +9,7 @@ import feedpoller.handler.PollingExceptionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -24,6 +25,7 @@ public class FeedPoller {
     private long initialDelay;
     private long shutdownTimeout;
     private PollingExceptionHandler pollingExceptionHandler;
+    private String contentType;
 
     private List<PollingTask> tasks;
     private ScheduledExecutorService service;
@@ -35,6 +37,7 @@ public class FeedPoller {
         this.pollingExceptionHandler = builder.pollingExceptionHandler;
         this.initialDelay = builder.initialDelay;
         this.shutdownTimeout = builder.shutdownTimeout;
+        this.contentType = builder.contentType;
 
         service = Executors.newScheduledThreadPool(endpointConfigs.size());
         tasks = new ArrayList<>();
@@ -42,7 +45,7 @@ public class FeedPoller {
 
     public void start() {
         for (EndpointConfig endpointConfig : endpointConfigs) {
-            PollingTask task = new PollingTask(client, newFeedHandler, endpointConfig.getKey(), endpointConfig.getStart(), pollingExceptionHandler);
+            PollingTask task = new PollingTask(client, newFeedHandler, endpointConfig.getKey(), endpointConfig.getStart(), contentType, pollingExceptionHandler);
 
             service.scheduleAtFixedRate(task, initialDelay, endpointConfig.getPeriodInMilliseconds(), TimeUnit.MILLISECONDS);
 
@@ -65,7 +68,7 @@ public class FeedPoller {
                 }
             }
         } catch (InterruptedException e) {
-            LOG.error("FeedPoller get interrupt and will be forced to shutdown all tasks.\n{}", e);
+            LOG.error("FeedPoller get interrupted and will be forced to shutdown all tasks.\n", e);
             service.shutdownNow();
             // preserve interrupt status
             Thread.currentThread().interrupt();
@@ -85,6 +88,7 @@ public class FeedPoller {
         private long initialDelay;
         private long shutdownTimeout = 60000L;
         private PollingExceptionHandler pollingExceptionHandler;
+        private String contentType;
 
         public FeedPollerBuilder withClient(Client client) {
             this.client = client;
@@ -116,6 +120,11 @@ public class FeedPoller {
             return this;
         }
 
+        public FeedPollerBuilder withContentType(String contentType) {
+            this.contentType = contentType;
+            return this;
+        }
+
         public FeedPoller build() {
             if (client == null) {
                 client = new Client();
@@ -131,6 +140,10 @@ public class FeedPoller {
 
             if (pollingExceptionHandler == null) {
                 pollingExceptionHandler = new DefaultPollingExceptionHandler();
+            }
+
+            if (contentType == null) {
+                contentType = MediaType.TEXT_PLAIN;
             }
 
             return new FeedPoller(this);

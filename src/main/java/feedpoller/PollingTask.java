@@ -14,6 +14,7 @@ public class PollingTask implements Runnable {
     private Client client;
     private NewFeedHandler newFeedHandler;
     private PollingExceptionHandler pollingExceptionHandler;
+    private String contentType;
 
     @Getter
     private String key;
@@ -22,25 +23,26 @@ public class PollingTask implements Runnable {
     @Getter
     private String nextUri;
 
-    public PollingTask(Client client, NewFeedHandler newFeedHandler, String key, String InitialUri, PollingExceptionHandler pollingExceptionHandler) {
+    public PollingTask(Client client, NewFeedHandler newFeedHandler, String key, String InitialUri, String contentType, PollingExceptionHandler pollingExceptionHandler) {
         this.client = client;
         this.newFeedHandler = newFeedHandler;
         this.key = key;
         this.InitialUri = InitialUri;
+        this.contentType = contentType;
         this.pollingExceptionHandler = pollingExceptionHandler;
 
         this.nextUri = InitialUri;
     }
 
     private void poll() {
-        LOG.info("Poller [{}] is reading feed from {}.", key, nextUri);
+        LOG.info("Poller [{}] is reading feeds from {}.", key, nextUri);
 
-        String page = client.resource(nextUri).get(String.class);
+        String page = client.resource(nextUri).type(contentType).get(String.class);
 
         try {
             nextUri = newFeedHandler.receiveNewFeed(page);
         } catch (EmptyFeedException e) {
-            LOG.warn("Poller [{}] receives a empty feed from {}. The feed will be read again next time.", key, nextUri);
+            LOG.warn("Poller [{}] receives an empty feed from {}. The feed will be read again next time.", key, nextUri);
         }
     }
 

@@ -10,6 +10,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import javax.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -94,6 +95,7 @@ public class FeedPollerIntegrationTest {
                 .withEndpointConfigs(endpointConfigs)
                 .withNewFeedHandler(newFeedHandler)
                 .withInitialDelay(INITIAL_DELAY)
+                .withContentType(MediaType.TEXT_PLAIN)
                 .withShutdownTimeout(SHUT_DOWN_TIMEOUT)
                 .build();
     }
@@ -173,6 +175,5 @@ public class FeedPollerIntegrationTest {
                 assertThat("last unread uri", pollingResult.getLastUnreadUri(), not(equalTo(BAR_KEY)));
             }
         }
-
     }
 }
