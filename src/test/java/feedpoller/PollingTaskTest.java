@@ -22,7 +22,7 @@ public class PollingTaskTest {
     private static final String INITIAL_URI = "MOCKED INITIAL URI";
     private static final String PAGE = "MOCKED PAGE";
     private static final String NEXT_URI = "MOCKED NEXT URI";
-    private static final String CONTENT_TYPE = MediaType.TEXT_PLAIN;
+    private static final String ACCEPT = MediaType.TEXT_PLAIN;
 
     @Mock
     private Client mockedClient;
@@ -51,10 +51,10 @@ public class PollingTaskTest {
     public void setUp() throws Exception {
         initMocks(this);
 
-        task = new PollingTask(mockedClient, mockedNewFeedHandler, KEY, INITIAL_URI, CONTENT_TYPE, mockedPollingExceptionHandler);
+        task = new PollingTask(mockedClient, mockedNewFeedHandler, KEY, INITIAL_URI, ACCEPT, mockedPollingExceptionHandler);
 
         when(mockedClient.resource(INITIAL_URI)).thenReturn(mockedWebResource);
-        when(mockedWebResource.type(anyString())).thenReturn(mockedBuilder);
+        when(mockedWebResource.accept(anyString())).thenReturn(mockedBuilder);
         when(mockedBuilder.get(String.class)).thenReturn(PAGE);
         when(mockedNewFeedHandler.receiveNewFeed(PAGE)).thenReturn(NEXT_URI);
     }
@@ -67,10 +67,10 @@ public class PollingTaskTest {
     }
 
     @Test
-    public void task_setContentType() throws Exception {
+    public void task_setAcceptType() throws Exception {
         task.run();
 
-        verify(mockedWebResource).type(CONTENT_TYPE);
+        verify(mockedWebResource).accept(ACCEPT);
     }
 
     @Test

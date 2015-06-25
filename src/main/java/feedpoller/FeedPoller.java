@@ -25,7 +25,7 @@ public class FeedPoller {
     private long initialDelay;
     private long shutdownTimeout;
     private PollingExceptionHandler pollingExceptionHandler;
-    private String contentType;
+    private String acceptType;
 
     private List<PollingTask> tasks;
     private ScheduledExecutorService service;
@@ -37,7 +37,7 @@ public class FeedPoller {
         this.pollingExceptionHandler = builder.pollingExceptionHandler;
         this.initialDelay = builder.initialDelay;
         this.shutdownTimeout = builder.shutdownTimeout;
-        this.contentType = builder.contentType;
+        this.acceptType = builder.accept;
 
         service = Executors.newScheduledThreadPool(endpointConfigs.size());
         tasks = new ArrayList<>();
@@ -45,7 +45,7 @@ public class FeedPoller {
 
     public void start() {
         for (EndpointConfig endpointConfig : endpointConfigs) {
-            PollingTask task = new PollingTask(client, newFeedHandler, endpointConfig.getKey(), endpointConfig.getStart(), contentType, pollingExceptionHandler);
+            PollingTask task = new PollingTask(client, newFeedHandler, endpointConfig.getKey(), endpointConfig.getStart(), acceptType, pollingExceptionHandler);
 
             service.scheduleAtFixedRate(task, initialDelay, endpointConfig.getPeriodInMilliseconds(), TimeUnit.MILLISECONDS);
 
@@ -88,7 +88,7 @@ public class FeedPoller {
         private long initialDelay;
         private long shutdownTimeout = 60000L;
         private PollingExceptionHandler pollingExceptionHandler;
-        private String contentType;
+        private String accept;
 
         public FeedPollerBuilder withClient(Client client) {
             this.client = client;
@@ -120,8 +120,8 @@ public class FeedPoller {
             return this;
         }
 
-        public FeedPollerBuilder withContentType(String contentType) {
-            this.contentType = contentType;
+        public FeedPollerBuilder withAcceptType(String accept) {
+            this.accept = accept;
             return this;
         }
 
@@ -142,8 +142,8 @@ public class FeedPoller {
                 pollingExceptionHandler = new DefaultPollingExceptionHandler();
             }
 
-            if (contentType == null) {
-                contentType = MediaType.TEXT_PLAIN;
+            if (accept == null) {
+                accept = MediaType.TEXT_PLAIN;
             }
 
             return new FeedPoller(this);

@@ -95,7 +95,7 @@ public class FeedPollerIntegrationTest {
                 .withEndpointConfigs(endpointConfigs)
                 .withNewFeedHandler(newFeedHandler)
                 .withInitialDelay(INITIAL_DELAY)
-                .withContentType(MediaType.TEXT_PLAIN)
+                .withAcceptType(MediaType.TEXT_PLAIN)
                 .withShutdownTimeout(SHUT_DOWN_TIMEOUT)
                 .build();
     }

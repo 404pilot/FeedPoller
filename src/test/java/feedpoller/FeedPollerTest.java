@@ -43,12 +43,12 @@ public class FeedPollerTest {
     public static final String FIELD_INITIAL_DELAY = "initialDelay";
     public static final String FIELD_SHUTDOWN_TIMEOUT = "shutdownTimeout";
     public static final String FIELD_POLLING_EXCEPTION_HANDLER = "pollingExceptionHandler";
-    public static final String FIELD_CONTENT_TYPE = "contentType";
+    public static final String FIELD_ACCEPT_TYPE = "acceptType";
     public static final String FILED_TASKS = "tasks";
 
     private static final long INITIAL_DELAY = 10000L; // don't run tasks in unit test
     private static final long SHUT_DOWN_TIMEOUT = 1L;
-    private static final String CONTENT_TYPE = MediaType.APPLICATION_JSON;
+    private static final String ACCEPT_TYPE = MediaType.APPLICATION_JSON;
 
 
     private static final String FOO_KEY = "foo";
@@ -94,7 +94,7 @@ public class FeedPollerTest {
                 .withNewFeedHandler(mockedNewFeedHandler)
                 .withInitialDelay(INITIAL_DELAY)
                 .withPollingExceptionHandler(mockedPollingExceptionHandler)
-                .withContentType(CONTENT_TYPE)
+                .withAcceptType(ACCEPT_TYPE)
                 .withShutdownTimeout(SHUT_DOWN_TIMEOUT);
 
         feedPoller = builder.build();
@@ -112,7 +112,7 @@ public class FeedPollerTest {
         long initialDelay = (long) getInternalState(feedPoller, FIELD_INITIAL_DELAY);
         long shutdownTimeout = (long) getInternalState(feedPoller, FIELD_SHUTDOWN_TIMEOUT);
         PollingExceptionHandler pollingExceptionHandler = (PollingExceptionHandler) getInternalState(feedPoller, FIELD_POLLING_EXCEPTION_HANDLER);
-        String contentType = (String) getInternalState(feedPoller, FIELD_CONTENT_TYPE);
+        String acceptType = (String) getInternalState(feedPoller, FIELD_ACCEPT_TYPE);
 
         assertThat("client:", client, equalTo(mockedClient));
         assertThat("endpointConfigs:", endpointConfigs, equalTo(endpointConfigs));
@@ -120,7 +120,7 @@ public class FeedPollerTest {
         assertThat("initialDelay:", initialDelay, equalTo(INITIAL_DELAY));
         assertThat("shutdownTimeout:", shutdownTimeout, equalTo(SHUT_DOWN_TIMEOUT));
         assertThat("pollingExceptionHandler:", pollingExceptionHandler, equalTo(mockedPollingExceptionHandler));
-        assertThat("contentType:", contentType, equalTo(CONTENT_TYPE));
+        assertThat("acceptType:", acceptType, equalTo(ACCEPT_TYPE));
     }
 
     @Test
@@ -205,7 +205,7 @@ public class FeedPollerTest {
     }
 
     @Test
-    public void builder_useTextContentType_ifContentTypeIsNotSpecified() throws Exception {
+    public void builder_useTextAcceptType_ifAcceptTypeIsNotSpecified() throws Exception {
         feedPoller = new FeedPoller.FeedPollerBuilder()
                 .withClient(mockedClient)
                 .withEndpointConfigs(endpointConfigs)
@@ -216,9 +216,9 @@ public class FeedPollerTest {
                 .build();
 
 
-        String contentType = (String) getInternalState(feedPoller, FIELD_CONTENT_TYPE);
+        String AcceptType = (String) getInternalState(feedPoller, FIELD_ACCEPT_TYPE);
 
-        assertThat("contentType is default", contentType, equalTo(MediaType.TEXT_PLAIN));
+        assertThat("AcceptType is default", AcceptType, equalTo(MediaType.TEXT_PLAIN));
     }
 
     // ************************************************************************
@@ -245,7 +245,7 @@ public class FeedPollerTest {
             assertThat("client is the same", ((Client) getInternalState(task, "client")), equalTo(mockedClient));
             assertThat("newFeedHandler is the same", ((NewFeedHandler) getInternalState(task, "newFeedHandler")), equalTo(mockedNewFeedHandler));
             assertThat("pollingExceptionHandler is the same", ((PollingExceptionHandler) getInternalState(task, "pollingExceptionHandler")), equalTo(mockedPollingExceptionHandler));
-            assertThat("contentType is expected", ((String) getInternalState(task, "contentType")), equalTo(CONTENT_TYPE));
+            assertThat("AcceptType is expected", ((String) getInternalState(task, FIELD_ACCEPT_TYPE)), equalTo(ACCEPT_TYPE));
 
             if (task.getKey().equals(FOO_KEY)) {
                 assertThat("initial uri is the same", task.getInitialUri(), equalTo(FOO_INITIAL_URI));

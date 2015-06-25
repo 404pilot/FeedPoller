@@ -14,7 +14,7 @@ public class PollingTask implements Runnable {
     private Client client;
     private NewFeedHandler newFeedHandler;
     private PollingExceptionHandler pollingExceptionHandler;
-    private String contentType;
+    private String acceptType;
 
     @Getter
     private String key;
@@ -23,21 +23,21 @@ public class PollingTask implements Runnable {
     @Getter
     private String nextUri;
 
-    public PollingTask(Client client, NewFeedHandler newFeedHandler, String key, String InitialUri, String contentType, PollingExceptionHandler pollingExceptionHandler) {
+    public PollingTask(Client client, NewFeedHandler newFeedHandler, String key, String InitialUri, String acceptType, PollingExceptionHandler pollingExceptionHandler) {
         this.client = client;
         this.newFeedHandler = newFeedHandler;
         this.key = key;
         this.InitialUri = InitialUri;
-        this.contentType = contentType;
+        this.acceptType = acceptType;
         this.pollingExceptionHandler = pollingExceptionHandler;
 
         this.nextUri = InitialUri;
     }
 
-    private void poll() {
+    private void poll() throws Exception {
         LOG.info("Poller [{}] is reading feeds from {}.", key, nextUri);
 
-        String page = client.resource(nextUri).type(contentType).get(String.class);
+        String page = client.resource(nextUri).accept(acceptType).get(String.class);
 
         try {
             nextUri = newFeedHandler.receiveNewFeed(page);
